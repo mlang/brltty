@@ -478,26 +478,22 @@ getContractionTableItem (BrailleContractionData *bcd, ContractionTableOffset off
   return &bcd->table->data.internal.header.bytes[offset];
 }
 
-static const ContractionTableCharacter *
+static int
+compareContractionTableCharacter(void const *key, void const *element) {
+  const wchar_t * const a = (wchar_t *) key;
+  const wchar_t * const b = &((ContractionTableCharacter *) element)->value;
+
+  return *a < *b? -1: *a > *b;
+}
+
+static inline const ContractionTableCharacter *
 getContractionTableCharacter (BrailleContractionData *bcd, wchar_t character) {
-  const ContractionTableCharacter *characters = getContractionTableItem(bcd, getContractionTableHeader(bcd)->characters);
-  int first = 0;
-  int last = getContractionTableHeader(bcd)->characterCount - 1;
-
-  while (first <= last) {
-    int current = (first + last) / 2;
-    const ContractionTableCharacter *ctc = &characters[current];
-
-    if (ctc->value < character) {
-      first = current + 1;
-    } else if (ctc->value > character) {
-      last = current - 1;
-    } else {
-      return ctc;
-    }
-  }
-
-  return NULL;
+  return bsearch(&character,
+    getContractionTableItem(bcd, getContractionTableHeader(bcd)->characters),
+    getContractionTableHeader(bcd)->characterCount,
+    sizeof(ContractionTableCharacter),
+    compareContractionTableCharacter
+  );
 }
 
 typedef struct {
